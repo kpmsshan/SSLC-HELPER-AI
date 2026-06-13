@@ -19,7 +19,9 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SslcHomeScreen(onFeatureClick: (String) -> Unit, currentLanguage: String, onLanguageToggle: () -> Unit) {
+fun SslcHomeScreen(viewModel: com.example.viewmodel.SslcViewModel, onFeatureClick: (String) -> Unit) {
+    val currentLanguage = viewModel.language
+    val onLanguageToggle = { viewModel.toggleLanguage() }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -52,18 +54,19 @@ fun SslcHomeScreen(onFeatureClick: (String) -> Unit, currentLanguage: String, on
             FeatureItem(if (currentLanguage == "English") "Progress" else "പുരോഗതി", Icons.Default.QueryStats, MaterialTheme.colorScheme.secondary, "Progress Dashboard")
         )
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            contentPadding = PaddingValues(bottom = 32.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            items(features) { feature ->
-                FeatureCard(feature = feature, onClick = { onFeatureClick(feature.internalName) })
+        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
+            Spacer(modifier = Modifier.height(16.dp))
+            PomodoroTimerWidget(viewModel = viewModel)
+            Spacer(modifier = Modifier.height(16.dp))
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(bottom = 32.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(features) { feature ->
+                    FeatureCard(feature = feature, onClick = { onFeatureClick(feature.internalName) })
+                }
             }
         }
     }
@@ -75,6 +78,61 @@ data class FeatureItem(
     val color: androidx.compose.ui.graphics.Color,
     val internalName: String
 )
+
+@Composable
+fun PomodoroTimerWidget(viewModel: com.example.viewmodel.SslcViewModel) {
+    androidx.compose.runtime.LaunchedEffect(viewModel.isTimerRunning) {
+        if (viewModel.isTimerRunning) {
+            while (true) {
+                kotlinx.coroutines.delay(1000L)
+                viewModel.tickTimer()
+            }
+        }
+    }
+
+    val timeLeft = viewModel.timerTimeLeft
+    val minutes = timeLeft / 60
+    val seconds = timeLeft % 60
+    val timeFormatted = String.format(java.util.Locale.getDefault(), "%02d:%02d", minutes, seconds)
+
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Pomodoro Timer", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Row {
+                    TextButton(onClick = { viewModel.switchTimerType("Focus") }) {
+                        Text("Focus", color = if (viewModel.timerType == "Focus") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    TextButton(onClick = { viewModel.switchTimerType("Break") }) {
+                        Text("Break", color = if (viewModel.timerType == "Break") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(timeFormatted, style = MaterialTheme.typography.displayLarge, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Button(onClick = { viewModel.toggleTimer() }) {
+                    Text(if (viewModel.isTimerRunning) "Pause" else "Start")
+                }
+                OutlinedButton(onClick = { viewModel.resetTimer() }) {
+                    Text("Reset")
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun FeatureCard(feature: FeatureItem, onClick: () -> Unit) {

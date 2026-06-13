@@ -58,12 +58,42 @@ class SslcViewModel(application: Application) : AndroidViewModel(application) {
     var language by mutableStateOf("English")
         private set
 
+    var timerTimeLeft by mutableStateOf(25 * 60)
+        private set
+    var isTimerRunning by mutableStateOf(false)
+        private set
+    var timerType by mutableStateOf("Focus") // "Focus" or "Break"
+        private set
+
     fun updateMode(mode: String) {
         currentMode = mode
     }
 
     fun toggleLanguage() {
         language = if (language == "English") "Malayalam" else "English"
+    }
+
+    fun toggleTimer() {
+        isTimerRunning = !isTimerRunning
+    }
+
+    fun resetTimer() {
+        isTimerRunning = false
+        timerTimeLeft = if (timerType == "Focus") 25 * 60 else 5 * 60
+    }
+
+    fun switchTimerType(type: String) {
+        timerType = type
+        resetTimer()
+    }
+
+    fun tickTimer() {
+        if (isTimerRunning && timerTimeLeft > 0) {
+            timerTimeLeft--
+        } else if (timerTimeLeft == 0 && isTimerRunning) {
+            isTimerRunning = false
+            // Switch automatically? Let's just stop for now.
+        }
     }
 
     init {

@@ -119,3 +119,10 @@ dependencies {
   "ksp"(libs.androidx.room.compiler)
   "ksp"(libs.moshi.kotlin.codegen)
 }
+
+tasks.register<Copy>("copyApkToOutput") {
+    dependsOn("assembleDebug")
+    from("build/outputs/apk/debug")
+    into("../output_gemini")
+    include("*.apk")
+}
