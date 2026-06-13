@@ -55,8 +55,15 @@ class SslcViewModel(application: Application) : AndroidViewModel(application) {
     var currentMode by mutableStateOf("Assistant")
         private set
 
+    var language by mutableStateOf("English")
+        private set
+
     fun updateMode(mode: String) {
         currentMode = mode
+    }
+
+    fun toggleLanguage() {
+        language = if (language == "English") "Malayalam" else "English"
     }
 
     init {
@@ -108,7 +115,7 @@ class SslcViewModel(application: Application) : AndroidViewModel(application) {
                 repository.insertMessage(userMsg)
 
                 // 2. Fetch Reply from SSLC AI Robot
-                val robotMsg = repository.askSslcRobot(query, _currentSubject.value, currentMode)
+                val robotMsg = repository.askSslcRobot(query, _currentSubject.value, currentMode, language)
                 repository.insertMessage(robotMsg)
             } catch (e: IllegalStateException) {
                 if (e.message == "APIKEY_MISSING") {

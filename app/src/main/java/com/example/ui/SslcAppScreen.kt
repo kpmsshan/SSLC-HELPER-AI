@@ -35,10 +35,14 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.ChatMessageEntity
 import com.example.viewmodel.SslcViewModel
 import kotlinx.coroutines.launch
+import java.io.OutputStreamWriter
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -52,6 +56,49 @@ fun SslcAppScreen(viewModel: SslcViewModel, onNavigateBack: () -> Unit = {}) {
     val errorType by viewModel.errorType.collectAsStateWithLifecycle()
 
     var activeTab by remember { mutableStateOf(0) } // 0 = Robot Chat, 1 = Bookmarks
+
+    val context = LocalContext.current
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+        uri?.let {
+            try {
+                context.contentResolver.openOutputStream(it)?.use { outputStream ->
+                    OutputStreamWriter(outputStream).use { writer ->
+                        val exportText = StringBuilder()
+                        exportText.append("SSLC AI ROBOT - Study Session Export\n")
+                        exportText.append("Date: ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())}\n")
+                        exportText.append("Subject: $currentSubject\n\n")
+                        exportText.append("--------------------------------------------------\n\n")
+                        
+                        messages.forEach { msg ->
+                            val sender = if (msg.sender == "user") "Student" else "AI Tutor"
+                            exportText.append("[$sender] ${SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date(msg.timestamp))}\n")
+                            if (msg.sender == "user") {
+                                exportText.append("${msg.userQuery}\n\n")
+                            } else {
+                                if (msg.mode == "Quiz" && msg.fullQuizTopic != null) {
+                                    exportText.append("Quiz: ${msg.fullQuizTopic}\n")
+                                }
+                                if (msg.isCasual) {
+                                    exportText.append("${msg.shortExplanation}\n")
+                                }
+                                if (msg.shortExplanation.isNotBlank() && !msg.isCasual) {
+                                    exportText.append("${msg.shortExplanation}\n")
+                                }
+                                if (msg.detailedExplanation.isNotBlank()) {
+                                    exportText.append("${msg.detailedExplanation}\n")
+                                }
+                                exportText.append("\n")
+                            }
+                        }
+                        
+                        writer.write(exportText.toString())
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
@@ -108,6 +155,27 @@ fun SslcAppScreen(viewModel: SslcViewModel, onNavigateBack: () -> Unit = {}) {
                     }
                 },
                 actions = {
+                    TextButton(onClick = { viewModel.toggleLanguage() }) {
+                        Text(
+                            text = if (viewModel.language == "English") "EN" else "ML",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    if (messages.isNotEmpty()) {
+                        IconButton(
+                            onClick = { 
+                                val fileName = "SSLC_Study_Session_${SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())}.txt"
+                                exportLauncher.launch(fileName) 
+                            },
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Download,
+                                contentDescription = "Export Session",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                     if (activeTab == 0 && messages.size > 1) {
                         IconButton(
                             onClick = { viewModel.clearHistory() },

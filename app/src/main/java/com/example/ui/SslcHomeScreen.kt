@@ -19,16 +19,23 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SslcHomeScreen(onFeatureClick: (String) -> Unit) {
+fun SslcHomeScreen(onFeatureClick: (String) -> Unit, currentLanguage: String, onLanguageToggle: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("SSLC AI ROBOT", fontWeight = FontWeight.ExtraBold) },
+                title = { Text(if (currentLanguage == "English") "SSLC AI ROBOT" else "SSLC AI റോബോട്ട്", fontWeight = FontWeight.ExtraBold) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ),
                 actions = {
+                    TextButton(onClick = onLanguageToggle) {
+                        Text(
+                            text = if (currentLanguage == "English") "EN" else "ML",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                     IconButton(onClick = { onFeatureClick("Settings") }) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
@@ -37,12 +44,12 @@ fun SslcHomeScreen(onFeatureClick: (String) -> Unit) {
         }
     ) { padding ->
         val features = listOf(
-            FeatureItem("Ask AI", Icons.Default.ChatBubble, MaterialTheme.colorScheme.primary),
-            FeatureItem("AI Tutor", Icons.Default.School, MaterialTheme.colorScheme.secondary),
-            FeatureItem("Quiz Generator", Icons.Default.Quiz, MaterialTheme.colorScheme.tertiary),
-            FeatureItem("Study Planner", Icons.Default.EventNote, MaterialTheme.colorScheme.error),
-            FeatureItem("Revision Notes", Icons.Default.LibraryBooks, MaterialTheme.colorScheme.primary),
-            FeatureItem("Progress Dashboard", Icons.Default.QueryStats, MaterialTheme.colorScheme.secondary)
+            FeatureItem(if (currentLanguage == "English") "Ask AI" else "AI ചോദിക്കുക", Icons.Default.ChatBubble, MaterialTheme.colorScheme.primary, "Ask AI"),
+            FeatureItem(if (currentLanguage == "English") "AI Tutor" else "AI ട്യൂട്ടർ", Icons.Default.School, MaterialTheme.colorScheme.secondary, "AI Tutor"),
+            FeatureItem(if (currentLanguage == "English") "Quiz Generator" else "ക്വിസ്", Icons.Default.Quiz, MaterialTheme.colorScheme.tertiary, "Quiz Generator"),
+            FeatureItem(if (currentLanguage == "English") "Study Planner" else "പഠന പ്ലാനർ", Icons.Default.EventNote, MaterialTheme.colorScheme.error, "Study Planner"),
+            FeatureItem(if (currentLanguage == "English") "Revision Notes" else "റിവിഷൻ", Icons.Default.LibraryBooks, MaterialTheme.colorScheme.primary, "Revision Notes"),
+            FeatureItem(if (currentLanguage == "English") "Progress" else "പുരോഗതി", Icons.Default.QueryStats, MaterialTheme.colorScheme.secondary, "Progress Dashboard")
         )
 
         LazyVerticalGrid(
@@ -56,7 +63,7 @@ fun SslcHomeScreen(onFeatureClick: (String) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(features) { feature ->
-                FeatureCard(feature = feature, onClick = { onFeatureClick(feature.name) })
+                FeatureCard(feature = feature, onClick = { onFeatureClick(feature.internalName) })
             }
         }
     }
@@ -65,7 +72,8 @@ fun SslcHomeScreen(onFeatureClick: (String) -> Unit) {
 data class FeatureItem(
     val name: String,
     val icon: ImageVector,
-    val color: androidx.compose.ui.graphics.Color
+    val color: androidx.compose.ui.graphics.Color,
+    val internalName: String
 )
 
 @Composable

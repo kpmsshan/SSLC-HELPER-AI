@@ -41,7 +41,7 @@ class SslcRepository(context: Context) {
         dao.clearChatHistory()
     }
 
-    suspend fun askSslcRobot(query: String, subject: String, currentMode: String): ChatMessageEntity = withContext(Dispatchers.IO) {
+    suspend fun askSslcRobot(query: String, subject: String, currentMode: String, language: String): ChatMessageEntity = withContext(Dispatchers.IO) {
         val apiKey = BuildConfig.GEMINI_API_KEY
         if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
             throw IllegalStateException("APIKEY_MISSING")
@@ -58,7 +58,7 @@ class SslcRepository(context: Context) {
                 - Use simple language and examples from daily life.
                 - Focus on understanding, not memorization.
                 - Encourage questions.
-                - Reply in the language the student used (English or Malayalam).
+                - Important: You MUST reply entirely in $language.
                 
                 Subject Guidelines:
                 - Mathematics: Show complete solutions. Explain why each step is performed.
@@ -87,7 +87,7 @@ class SslcRepository(context: Context) {
                 - Questions must be suitable for Class 10.
                 - Include easy, medium, and hard questions.
                 - Provide correct answers and explanations.
-                - Reply in the language the student used (English or Malayalam).
+                - Important: You MUST reply entirely in $language.
                 
                 Response Structure Requirements (JSON ONLY):
                 - "fullQuizTopic": string, Topic Name
@@ -104,8 +104,8 @@ class SslcRepository(context: Context) {
                 
                 Core Rules:
                 1. Answer in simple, student-friendly language. Avoid unnecessarily difficult vocabulary.
-                2. Support English and Malayalam. Explain concepts clearly.
-                3. Reply in the same language used by the student's query.
+                2. Explain concepts clearly.
+                3. Important: You MUST reply entirely in $language.
                 4. Give highly accurate, exam-focused, and educational responses.
                 
                 Subject Guidelines:
@@ -128,22 +128,49 @@ class SslcRepository(context: Context) {
             }
         }
 
-        // Prepare the payload
-        val request = GeminiRequest(
-            contents = listOf(
-                Content(parts = listOf(Part(text = "Subject/Context: $subject. Student says: $query")))
-            ),
-            generationConfig = GenerationConfig(
-                responseMimeType = "application/json",
-                temperature = 0.5f
-            ),
-            systemInstruction = Content(parts = listOf(Part(text = systemInstructionText)))
-        )
-
         try {
-            val response = GeminiApiClient.service.generateContent(apiKey, request)
-            var jsonText = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
-                ?: throw Exception("Empty response from AI Robot")
+            var jsonText = ""
+
+            if (currentMode == "Quiz") {
+                val bytezKey = BuildConfig.BYTEZ_API_KEY
+                if (bytezKey.isEmpty() || bytezKey == "MY_BYTEZ_API_KEY") {
+                    throw IllegalStateException("APIKEY_MISSING") // Can reuse the UI logic
+                }
+                
+                val openRouterReq = OpenRouterRequest(
+                    model = "google/gemini-2.5-pro", // Or any good model
+                    messages = listOf(
+                        OpenRouterMessage("system", systemInstructionText),
+                        OpenRouterMessage("user", "Subject/Context: $subject. Student says: $query")
+                    )
+                )
+                
+                val openRouterRes = OpenRouterApiClient.service.generateContent(
+                    authorization = "Bearer $bytezKey",
+                    referer = "https://aistudio.google.com/",
+                    request = openRouterReq
+                )
+
+                jsonText = openRouterRes.choices?.firstOrNull()?.message?.content
+                    ?: throw Exception("Empty response from OpenRouter API")
+
+            } else {
+                // Prepare the payload
+                val request = GeminiRequest(
+                    contents = listOf(
+                        Content(parts = listOf(Part(text = "Subject/Context: $subject. Student says: $query")))
+                    ),
+                    generationConfig = GenerationConfig(
+                        responseMimeType = "application/json",
+                        temperature = 0.5f
+                    ),
+                    systemInstruction = Content(parts = listOf(Part(text = systemInstructionText)))
+                )
+    
+                val response = GeminiApiClient.service.generateContent(apiKey, request)
+                jsonText = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
+                    ?: throw Exception("Empty response from AI Robot")
+            }
 
             Log.d("SslcRepository", "Response: $jsonText")
 

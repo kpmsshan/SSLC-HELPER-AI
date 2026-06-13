@@ -41,7 +41,9 @@ fun AppNavigation(viewModel: SslcViewModel) {
                         "Progress Dashboard" -> navController.navigate("progress_dashboard")
                         "Settings" -> navController.navigate("settings")
                     }
-                }
+                },
+                currentLanguage = viewModel.language,
+                onLanguageToggle = { viewModel.toggleLanguage() }
             )
         }
         composable("chat") {
