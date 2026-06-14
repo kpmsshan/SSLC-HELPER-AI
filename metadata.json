@@ -1,5 +1,5 @@
 {
-  "name": "SSLC AI Robot",
+  "name": "SSLC AI ROBOT",
   "description": "Kerala SSLC educational AI assistant for students, supporting English & Malayalam with interactive step-by-step solving & quizzes.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

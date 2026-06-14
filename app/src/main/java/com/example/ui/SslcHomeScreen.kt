@@ -56,6 +56,18 @@ fun SslcHomeScreen(viewModel: com.example.viewmodel.SslcViewModel, onFeatureClic
 
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
             Spacer(modifier = Modifier.height(16.dp))
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Welcome to SSLC AI ROBOT", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text("Developed By MUHAMMAD SHAAN K P", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
             PomodoroTimerWidget(viewModel = viewModel)
             Spacer(modifier = Modifier.height(16.dp))
             LazyVerticalGrid(
