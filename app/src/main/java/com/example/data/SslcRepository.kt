@@ -13,14 +13,14 @@ class SslcRepository(context: Context) {
     private val db = AppDatabase.getDatabase(context)
     private val dao = db.chatMessageDao()
     private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
-    private val responseAdapter = moshi.adapter(SslcResponseJson::class.java)
+    private val responseAdapter = moshi.adapter(SslcResponseJson::class.java).lenient()
     private val stringListAdapter = moshi.adapter<List<String>>(
         com.squareup.moshi.Types.newParameterizedType(List::class.java, String::class.java)
-    )
+    ).lenient()
     private val quizQuestionListAdapter = moshi.adapter<List<QuizQuestionJson>>(
         com.squareup.moshi.Types.newParameterizedType(List::class.java, QuizQuestionJson::class.java)
-    )
-    private val quizSummaryAdapter = moshi.adapter(QuizSummaryJson::class.java)
+    ).lenient()
+    private val quizSummaryAdapter = moshi.adapter(QuizSummaryJson::class.java).lenient()
 
     val allMessages: Flow<List<ChatMessageEntity>> = dao.getAllMessagesFlow()
     val bookmarkedMessages: Flow<List<ChatMessageEntity>> = dao.getBookmarkedMessagesFlow()
@@ -138,11 +138,12 @@ class SslcRepository(context: Context) {
                 }
                 
                 val openRouterReq = OpenRouterRequest(
-                    model = "google/gemini-2.5-pro", // Or any good model
+                    model = "meta-llama/llama-3-8b-instruct", // Bytez models
                     messages = listOf(
                         OpenRouterMessage("system", systemInstructionText),
                         OpenRouterMessage("user", "Subject/Context: $subject. Student says: $query")
-                    )
+                    ),
+                    responseFormat = OpenRouterResponseFormat(type = "json_object")
                 )
                 
                 val openRouterRes = OpenRouterApiClient.service.generateContent(
